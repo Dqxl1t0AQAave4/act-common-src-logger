@@ -27,9 +27,13 @@ namespace logger
         LPTSTR messageBuffer = nullptr;
         size_t size = FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
                                     NULL, error_message_code, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR) &messageBuffer, 0, NULL);
+
+        /* FormatMessage adds '\r\n' that is redundant for us */
         CString str(messageBuffer);
         str.TrimRight(_T("\r\n"));
+
         log(str);
+
         LocalFree(messageBuffer);
     }
 
