@@ -8,8 +8,8 @@ namespace logger
 {
     namespace
     {
-        static logger_t _log([] (CString) {});
-        static std::mutex log_guard;
+        logger_t _log([] (CString) {});
+        std::mutex log_guard;
     }
 
     void log(CString s, ...)
