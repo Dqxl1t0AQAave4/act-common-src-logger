@@ -14,12 +14,15 @@ namespace logger
 
     void log(CString s, ...)
     {
-        std::lock_guard<std::mutex> guard(log_guard);
         va_list args;
         va_start(args, s);
         CString f; f.FormatV(s, args);
-        _log(f);
         va_end(args);
+
+        {
+            std::lock_guard<std::mutex> guard(log_guard);
+            _log(f);
+        }
     }
 
     void log_system_error(DWORD error_message_code)
