@@ -30,7 +30,7 @@ namespace logger
      *
      * Thread-safe.
      */
-    void log_last_error(DWORD error_message_code);
+    void log_system_error(DWORD error_message_code);
 
     
     /**
