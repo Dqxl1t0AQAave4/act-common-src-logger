@@ -24,7 +24,7 @@
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\logger.h">
+    <ClInclude Include="include\act-common\logger.h">
       <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>
