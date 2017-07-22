@@ -1,4 +1,6 @@
-# logger-simple-api
+# `act-common` - `/src/logger-simple-api`
+
+Является частью проекта [`act-common`](https://github.com/Dqxl1t0AQAave4/act-common).
 
 Простейший потокобезопасный логгер.
 
