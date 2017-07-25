@@ -115,7 +115,7 @@ namespace logger
         template < typename MsgType2, typename ...Args >
         static instance_t & logf(MsgType2 && msg, Args && ...args)
         {
-            return log(format<message_t>(std::move(msg), std::forward<Args>(args)...));
+            return log(format<message_t>(std::forward<MsgType2>(msg), std::forward<Args>(args)...));
         }
 
     public:
