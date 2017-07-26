@@ -4,6 +4,7 @@
 #include <mutex>
 #include <string>
 #include <sstream>
+#include <cstdarg>
 
 #include <act-common/logger_fmt.h>
 
