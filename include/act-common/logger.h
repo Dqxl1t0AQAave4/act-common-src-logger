@@ -106,18 +106,6 @@ namespace logger
             return _instance;
         }
 
-        template < typename MsgType2, typename ...Args >
-        static instance_t & logf(const MsgType2 & msg, Args && ...args)
-        {
-            return log(format<message_t>(msg, std::forward<Args>(args)...));
-        }
-
-        template < typename MsgType2, typename ...Args >
-        static instance_t & logf(MsgType2 && msg, Args && ...args)
-        {
-            return log(format<message_t>(std::forward<MsgType2>(msg), std::forward<Args>(args)...));
-        }
-
     public:
 
         spi_t & spi()
@@ -129,4 +117,16 @@ namespace logger
 
     using log  = logger_t < std::string > ;
     using wlog = logger_t < std::wstring > ;
+
+    template < typename Log, typename MsgType, typename ...Args >
+    inline typename Log::instance_t & logf(const MsgType & msg, Args && ...args)
+    {
+        return Log::log(format<Log::message_t>(msg, std::forward<Args>(args)...));
+    }
+
+    template < typename Log, typename MsgType, typename ...Args >
+    inline typename Log::instance_t & logf(MsgType && msg, Args && ...args)
+    {
+        return Log::log(format<Log::message_t>(std::forward<MsgType>(msg), std::forward<Args>(args)...));
+    }
 }
