@@ -4,71 +4,129 @@
 
 Простейший потокобезопасный логгер.
 
-## logger.h
+## Заголовочные файлы
+
+```c++
+#include <act-common/logger.h>          // (1)
+#include <act-common/logger_fmt.h>      // (2)
+#include <act-common/logger_win.h>      // (3)
+#include <act-common/logger_impl.h>     // (4)
+```
+
+**(1)** Основные определения. Классы `logger_t<>`, `spi::logger_t<>`. Алиасы типов `clog`, `wlog`. Функции `log<>()`, `logf<>()`, `logs<>()`, `logss<>()`.
+
+**(2)** Объявления форматтеров `format<>()`. Определения `printf`-like форматтеров.
+
+**(3)** Дополнительные специализации форматтеров для WinAPI. Класс `sys_error` и его форматтер.
+
+**(4)** Определение статических переменных логгеров `clog` и `wlog`.
 
 ### Пространства имен
 
 ```c++
-namespace logger { }
+namespace logger
+{
+    namespace spi { }
+}
 ```
 
-### Типы
+## API в примерах
 
 ```c++
-using logger_t = std::function < void(CString) > ;
-```
+#include <act-common/logger.h>
 
-> Логгер-функция. Данная функция будет вызываться всякий раз при вызове логирующего метода. Единственный параметр -- полностью отформатированная строка.
-
-> Код функции будет вызван под единым для всего логгера мьютексом.
-
-> Значение по умолчанию -- пустая функция `[] (CString) { }`.
-
-### Функции
-
-Все функции являются потокобезопасными -- блокируются общим мьютексом.
-
-```c++
-void log(CString s, ...);
-```
-
-> Передает логгер-функции строку, являющуюся результатом применения `CString:Format` с переданными аргументами.
-
-```c++
-void log_system_error(DWORD error_message_code);
-```
-
-> Передает логгер-функции отформатированную WinAPI строку, соответствующую переданному коду ошибки.
-
-```c++
-void set(logger_t logger);
-```
-
-> Устанавливает логгер-функцию.
-
-## Примеры использования
-
-```c++
-/* Установка логгер-функции */
-logger::set([] (CString s) { std::cout << s; });
+/* Установка логгер-функций */
+logger::clog::get().spi().set_logger([] (const std::string & m) { std::cout << m << std::endl; });
+logger::wlog::get().spi().set_logger([] (const std::wstring & m) { std::wcout << m << std::endl; });
 
 //...
 
-/* Если какая-нибудь WinAPI-функция завершится неудачей */
-if (!SomeWinAPIFunction())
+/* Логирование строк */
+logger::log<logger::clog>("String"); // prints `String`
+logger::clog::log("String"); // same as prev.
+
+/* Логирование форматированных строк */
+logger::logs<logger::clog>("Mr.%s is No.%d", "Simpson", 1); // prints `Mr.Simpson is No.1`
+logger::log<logger::clog>(logger::format("Mr.%s is No.%d", "Simpson", 1)); // prints `Mr.Simpson is No.1`
+logger::logs<logger::clog>([] (std::ostream & s) {
+    s << "Mr." << "Simpson" << " is No." << 1; }); // prints `Mr.Simpson is No.1`
+
+/* Логирование объектов */
+logger::logss<logger::clog>(123); // prints `123`
+logger::logs<logger::clog>([] (std::ostream & s) { s << 123; }); // same as prev.
+
+/* Логирование с применением форматтеров */
+#include <act-common/logger_win.h>
+logger::logf<logger::clog>(logger::sys_error{0}); // prints e.g. `Операция успешно завершена.`
+logger::log<logger::clog>(logger::format<std::string>(logger::sys_error{0})); // same as prev.
+
+/* Специализация и перегрузка форматтеров */
+
+// Объявления форматтеров могут быть включены отдельно от `logger.h`
+#include <act-common/logger_fmt.h>
+
+struct s1 { std::string first_name; std::string last_name; };
+struct s2 { std::string first_name; std::string last_name; };
+
+namespace logger
 {
-    DWORD error_message_code = GetLastError();
     
-    /* Залогируем эту неудачу */
-    logger::log("Error occurred in module %s", MODULE_NAME);
-    logger::log_system_error(error_message_code);
+    enum format_type
+    {
+        format_type_short,
+        format_type_long
+    };
+    
+    /* Specialization */
+    
+    template <> std::string format(const s1 &s, format_type &&t) // lvalue
+    {
+        if (t == format_type_short) return s.first_name;
+        return s.first_name + " " + s.last_name;
+    }
+    
+    template <> std::string format(s1 &&s, format_type &&t) // rvalue
+    {
+        if (t == format_type_short) return s.first_name;
+        return s.first_name + " " + s.last_name;
+    }
+
+    /* Overloading */
+    
+    template <typename T> T format(const s2 &s, format_type t);
+    template <typename T> T format(s2 &&s, format_type t);
+    
+    template <> std::string format(const s2 &s, format_type t) // lvalue
+    {
+        if (t == format_type_short) return s.first_name;
+        return s.first_name + " " + s.last_name;
+    }
+    
+    template <> std::string format(s2 &&s, format_type t) // rvalue
+    {
+        if (t == format_type_short) return s.first_name;
+        return s.first_name + " " + s.last_name;
+    }
 }
 
-//...
+// Объявления форматтеров могут быть включены отдельно от `logger.h`
+#include <act-common/logger.h>
 
-/**
- * Обнуление логгер-функции для устранения
- * нежелательных эффектов при завершении приложения.
- */
-logger::set([] (CString) { });
+// Specialized `format`
+logger::logf<logger::clog>(s1{"Homer", "Simpson"}, logger::format_type_short); // prints `Homer`
+logger::logf<logger::clog>(s1{"Homer", "Simpson"}, logger::format_type_long); // prints `Homer Simpson`
+
+// Overloaded `format`
+logger::logf<logger::clog>(s2{"Homer", "Simpson"}, logger::format_type_short); // prints `Homer`
+logger::logf<logger::clog>(s2{"Homer", "Simpson"}, logger::format_type_long); // prints `Homer Simpson`
 ```
+
+## Установка
+
+Библиотека не является header-only в строгом смысле, т.к. статические объекты `logger::logger_t::_instance` должны быть где-то определены.
+
+Исходя из этого, существует три варианта подключения библиотеки:
+
+1. Подключить весь проект как зависимость (для WinAPI-based проектов; конфликтует с MFC)
+2. Добавить путь к директории `include` в пути поиска заголовочных файлов и вручную включить файл `logger.cpp` в проект (только если в проекте используются precompiled headers)
+3. Добавить путь к директории `include` в пути поиска заголовочных файлов и вручную включить файл `<act-common/logger_impl.h>` в какой-либо специально отведенный `cpp`-файл (универсальный способ)
