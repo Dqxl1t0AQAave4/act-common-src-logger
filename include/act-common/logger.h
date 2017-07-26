@@ -116,7 +116,7 @@ namespace logger
 
     };
 
-    using log  = logger_t < std::string > ;
+    using clog = logger_t < std::string > ;
     using wlog = logger_t < std::wstring > ;
     
     template < typename Log >
