@@ -117,6 +117,18 @@ namespace logger
 
     using log  = logger_t < std::string > ;
     using wlog = logger_t < std::wstring > ;
+    
+    template < typename Log >
+    inline typename Log::instance_t & log(const typename Log::message_t & msg)
+    {
+        return Log::log(msg);
+    }
+
+    template < typename Log >
+    inline typename Log::instance_t & log(typename Log::message_t && msg)
+    {
+        return Log::log(std::forward<Log::message_t>(msg));
+    }
 
     template < typename Log, typename MsgType, typename ...Args >
     inline typename Log::instance_t & logf(const MsgType & msg, Args && ...args)
