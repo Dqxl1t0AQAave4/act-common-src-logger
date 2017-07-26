@@ -165,4 +165,20 @@ namespace logger
 
         return Log::log(fmt);
     }
+
+    template < typename Log, typename MsgType >
+    inline typename Log::instance_t & logss(const MsgType & msg)
+    {
+        std::basic_ostringstream<typename Log::message_t::value_type> s;
+        s << msg;
+        return Log::log(s.str());
+    }
+
+    template < typename Log, typename MsgType >
+    inline typename Log::instance_t & logss(MsgType && msg)
+    {
+        std::basic_ostringstream<typename Log::message_t::value_type> s;
+        s << std::forward<MsgType>(msg);
+        return Log::log(s.str());
+    }
 }
