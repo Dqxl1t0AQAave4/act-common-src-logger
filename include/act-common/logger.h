@@ -3,6 +3,7 @@
 #include <functional>
 #include <mutex>
 #include <string>
+#include <sstream>
 
 #include <act-common/logger_fmt.h>
 
@@ -140,5 +141,27 @@ namespace logger
     inline typename Log::instance_t & logf(MsgType && msg, Args && ...args)
     {
         return Log::log(format<Log::message_t>(std::forward<MsgType>(msg), std::forward<Args>(args)...));
+    }
+
+    template < typename Log >
+    inline typename Log::instance_t & logs(std::function<void(std::basic_ostream<typename Log::message_t::value_type> &)> && fn)
+    {
+        std::basic_ostringstream<typename Log::message_t::value_type> s;
+        fn(s);
+        return Log::log(s.str());
+    }
+
+    template < typename Log >
+    inline typename Log::instance_t & logs(const typename Log::message_t::value_type * msg, ...)
+    {
+        std::basic_string<typename Log::message_t::value_type> fmt;
+
+        va_list args;
+
+        va_start(args, msg);
+        fmt = format_v(msg, args);
+        va_end(args);
+
+        return Log::log(fmt);
     }
 }
